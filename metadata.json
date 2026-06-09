@@ -1,0 +1,6 @@
+{
+  "name": "MESA",
+  "description": "Sistema de reservas de lujo y experiencia gastronómica gourmet para los paladares más exigentes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
