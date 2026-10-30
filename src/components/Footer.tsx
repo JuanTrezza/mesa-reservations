@@ -1,58 +1,71 @@
-import React from 'react';
-import { Globe, Share2, HelpCircle } from 'lucide-react';
+import { Instagram, Share2 } from 'lucide-react';
+import type { ToastData } from './Toast';
 
-export default function Footer() {
-  const handleShare = () => {
+interface FooterProps {
+  onNotify: (t: Omit<ToastData, 'id'>) => void;
+}
+
+export default function Footer({ onNotify }: FooterProps) {
+  const handleShare = async () => {
+    const url = window.location.href;
     if (navigator.share) {
-      navigator.share({
-        title: 'MESA | Experiencia Gastronómica Exclusiva',
-        text: '¡Reserva una mesa de lujo en MESA!',
-        url: window.location.href,
-      }).catch(err => console.log(err));
-    } else {
-      alert('Enlace copiado al portapapeles: ' + window.location.href);
-      navigator.clipboard.writeText(window.location.href);
+      try {
+        await navigator.share({ title: 'MESA — Reservas', text: 'Reservá tu mesa en MESA, Palermo.', url });
+      } catch {
+        /* el usuario cerró el diálogo */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      onNotify({ title: 'Link copiado', message: 'Ya podés pegarlo donde quieras.' });
+    } catch {
+      onNotify({ title: 'No pudimos copiar el link', message: url, tone: 'info' });
     }
   };
 
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="w-full py-16 px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-8 bg-surface-dim border-t border-outline-variant/15 text-center md:text-left">
-      {/* Brand logo & Copy */}
-      <div className="flex flex-col items-center md:items-start gap-2">
-        <div className="font-display font-semibold italic text-primary text-2xl tracking-widest">
-          MESA
+    <footer className="bg-surface-dim border-t border-outline-variant/40">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 md:px-12 py-12 md:py-16 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+        <div className="flex flex-col items-center md:items-start gap-2">
+          <p className="font-display font-semibold italic text-primary text-3xl tracking-widest">MESA</p>
+          <p className="text-sm text-on-surface-variant leading-relaxed">
+            Honduras 5123, Palermo · Buenos Aires
+            <br />© {year} MESA. Todos los derechos reservados.
+          </p>
         </div>
-        <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-          &copy; 2026 MESA. Experiencia Gastronómica Exclusiva. <br />
-          Todos los derechos reservados.
-        </p>
-      </div>
 
-      {/* Corporate Links */}
-      <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center font-sans text-xs text-on-surface-variant font-semibold">
-        <a href="#inicio" className="hover:text-primary transition-colors">Privacidad</a>
-        <a href="#inicio" className="hover:text-primary transition-colors">Términos</a>
-        <a href="#inicio" className="hover:text-primary transition-colors">Sostenibilidad</a>
-        <a href="#inicio" className="hover:text-primary transition-colors">Prensa</a>
-        <a href="#FAQ" className="hover:text-primary transition-colors">Preguntas</a>
-      </div>
+        <nav aria-label="Legales" className="flex flex-wrap gap-x-2 justify-center text-sm text-on-surface-variant font-medium">
+          {['Privacidad', 'Términos', 'Prensa'].map((l) => (
+            <a key={l} href="#inicio" className="min-h-11 px-2 inline-flex items-center hover:text-primary transition-colors">
+              {l}
+            </a>
+          ))}
+          <a href="#FAQ" className="min-h-11 px-2 inline-flex items-center hover:text-primary transition-colors">
+            Preguntas frecuentes
+          </a>
+        </nav>
 
-      {/* Share / Lang Actions */}
-      <div className="flex gap-4">
-        <button
-          onClick={() => alert('Idioma establecido en Español (Castellano).')}
-          className="p-2 border border-outline-variant/20 rounded-full text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors cursor-pointer"
-          title="Cambiar idioma"
-        >
-          <Globe size={16} />
-        </button>
-        <button
-          onClick={handleShare}
-          className="p-2 border border-outline-variant/20 rounded-full text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors cursor-pointer"
-          title="Compartir Restaurante"
-        >
-          <Share2 size={16} />
-        </button>
+        <div className="flex gap-3">
+          <a
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="MESA en Instagram"
+            className="w-11 h-11 inline-flex items-center justify-center border border-outline-variant rounded-full text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+          >
+            <Instagram size={18} />
+          </a>
+          <button
+            onClick={handleShare}
+            aria-label="Compartir MESA"
+            className="w-11 h-11 inline-flex items-center justify-center border border-outline-variant rounded-full text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+          >
+            <Share2 size={18} />
+          </button>
+        </div>
       </div>
     </footer>
   );

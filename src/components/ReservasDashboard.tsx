@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { Star, QrCode, ClipboardList, Trash2, Calendar, RefreshCcw, HelpCircle, CheckCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Star, QrCode, Trash2, RefreshCcw, X } from 'lucide-react';
 import { Reservation } from '../types';
+import Reveal from './Reveal';
+import { formatLongDate, parseISODate, scrollToId } from '../lib/booking';
 
 interface ReservasDashboardProps {
   reservations: Reservation[];
@@ -8,271 +11,274 @@ interface ReservasDashboardProps {
   onRepeatReservation: (res: Reservation) => void;
 }
 
-export default function ReservasDashboard({
-  reservations,
-  onCancelReservation,
-  onRepeatReservation,
-}: ReservasDashboardProps) {
-  // Simple State to view QR Code popup
+function DateChip({ iso, muted = false }: { iso: string; muted?: boolean }) {
+  const d = parseISODate(iso);
+  const month = d.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '');
+  return (
+    <div
+      className={`text-center w-16 shrink-0 py-2 rounded-sm border ${
+        muted ? 'bg-surface-container border-outline-variant/50' : 'bg-background border-primary/40'
+      }`}
+      aria-hidden="true"
+    >
+      <p className={`text-[11px] uppercase font-semibold tracking-wider ${muted ? 'text-on-surface-variant' : 'text-primary'}`}>{month}</p>
+      <p className={`text-3xl font-serif font-semibold leading-none mt-0.5 ${muted ? 'text-on-surface-variant' : 'text-primary'}`}>
+        {d.getDate()}
+      </p>
+    </div>
+  );
+}
+
+export default function ReservasDashboard({ reservations, onCancelReservation, onRepeatReservation }: ReservasDashboardProps) {
   const [activeQrRes, setActiveQrRes] = useState<Reservation | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
-  // Filter reservations
-  const activeReservations = reservations.filter((r) => r.status === 'confirmada');
-  const pastReservations = reservations.filter((r) => r.status === 'finalizada' || r.status === 'cancelada');
+  const activeReservations = reservations
+    .filter((r) => r.status === 'confirmada')
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const pastReservations = reservations
+    .filter((r) => r.status !== 'confirmada')
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
 
-  // Compute points: e.g. 200 points base + 45 for each active/past non-cancelled reservation
-  const completedOrConfirmedCount = reservations.filter((r) => r.status !== 'cancelada').length;
-  const loyaltyPoints = 200 + completedOrConfirmedCount * 45;
+  const loyaltyPoints = 200 + reservations.filter((r) => r.status !== 'cancelada').length * 45;
+
+  useEffect(() => {
+    if (!activeQrRes) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setActiveQrRes(null);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeQrRes]);
 
   return (
-    <section id="reservas-dashboard" className="py-20 px-6 md:px-12 max-w-7xl mx-auto border-t border-outline-variant/15">
-      <div className="bg-surface-container-low border border-outline-variant/20 p-6 md:p-10 rounded-sm shadow-xl">
-        
-        {/* Dashboard Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-outline-variant/15">
-          <div className="space-y-1">
-            <h2 className="font-serif text-2xl md:text-3xl font-bold text-on-surface">
-              Mis Reservas
-            </h2>
-            <p className="text-on-surface-variant text-sm">
-              Gestione sus visitas programadas, códigos QR de acceso automático y puntos de fidelidad.
-            </p>
+    <section id="reservas-dashboard" aria-labelledby="dashboard-title" className="py-20 md:py-28 px-5 sm:px-6 md:px-12 bg-background border-t border-outline-variant/30">
+      <Reveal className="max-w-5xl mx-auto bg-surface-container-low border border-outline-variant/50 p-5 sm:p-6 md:p-10 rounded-md shadow-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 mb-8 pb-6 border-b border-outline-variant/50">
+          <div className="space-y-2">
+            <p className="text-primary text-xs font-semibold uppercase tracking-[0.25em]">Tu cuenta</p>
+            <h2 id="dashboard-title" className="font-serif text-4xl font-semibold italic text-on-surface">Mis reservas</h2>
+            <p className="text-on-surface-variant text-base">Gestioná tus visitas, tu código QR de acceso y tus puntos MESA.</p>
           </div>
 
-          {/* Loyalty badge */}
-          <div className="bg-primary/10 border border-primary/30 px-5 py-2.5 rounded-full flex items-center gap-2 shadow-inner">
-            <Star size={16} className="text-primary fill-primary animate-pulse" />
-            <span className="text-primary font-sans text-xs font-bold uppercase tracking-[0.1em]">
-              {loyaltyPoints} PUNTOS MESA
-            </span>
-          </div>
+          <p className="bg-primary/10 border border-primary/40 px-5 py-2.5 rounded-full flex items-center gap-2">
+            <Star size={16} className="text-primary fill-current" aria-hidden="true" />
+            <span className="text-primary text-xs font-bold uppercase tracking-[0.1em]">{loyaltyPoints} puntos MESA</span>
+          </p>
         </div>
 
-        {/* Reservations Container */}
-        <div className="space-y-6">
-          {/* Active Reservations Header */}
+        <div className="space-y-10">
           <div className="space-y-4">
-            <h3 className="text-xs uppercase font-sans tracking-widest text-primary font-bold">
-              Turnos Confirmados
-            </h3>
+            <h3 className="text-xs uppercase tracking-widest text-primary font-bold">Próximas</h3>
 
             {activeReservations.length === 0 ? (
-              <div className="text-center py-8 bg-surface-container/60 rounded border border-dashed border-outline-variant/10">
-                <p className="text-on-surface-variant text-xs italic">
-                  No tiene ninguna reserva activa en este momento.
-                </p>
+              <div className="text-center py-8 px-4 bg-surface-container/60 rounded-sm border border-dashed border-outline-variant/60">
+                <p className="text-on-surface-variant text-base">No tenés reservas activas por ahora.</p>
                 <button
-                  onClick={() => {
-                    document.getElementById('quick-book-form')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="mt-3 text-primary text-xs font-bold underline hover:text-primary-container cursor-pointer"
+                  onClick={() => scrollToId('quick-book-form', 'center')}
+                  className="mt-2 min-h-11 px-3 text-primary text-sm font-semibold underline underline-offset-4 hover:text-primary-container"
                 >
-                  ¡Reserve una mesa ahora!
+                  Reservá una mesa
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {activeReservations.map((res) => {
-                  // Format Date nicely: e.g. "2026-06-15" to month and day
-                  const d = new Date(res.date);
-                  const isInvalid = isNaN(d.getTime());
-                  const dayNum = isInvalid ? res.date.split('-')[2] || '15' : d.getDate();
-                  const monthName = isInvalid ? 'JUNIO' : d.toLocaleDateString('es-ES', { month: 'long' }).toUpperCase();
-
-                  return (
-                    <div
+              <ul className="space-y-4">
+                <AnimatePresence initial={false}>
+                  {activeReservations.map((res) => (
+                    <motion.li
                       key={res.id}
-                      className="flex flex-col md:flex-row justify-between p-6 bg-surface-bright rounded-sm border-l-4 border-primary shadow-md gap-4 items-start md:items-center hover:bg-surface-bright/80 transition-all"
+                      layout
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="flex flex-col md:flex-row justify-between p-4 sm:p-6 bg-surface-bright rounded-sm border-l-4 border-primary shadow-md gap-4 md:items-center"
                     >
-                      {/* Left: Date pill & Details */}
-                      <div className="flex gap-6 items-center">
-                        <div className="text-center min-w-[70px] bg-background p-2 rounded border border-outline-variant/25">
-                          <p className="text-[9px] uppercase text-primary font-bold tracking-wider">
-                            {monthName.substring(0, 4)}
-                          </p>
-                          <p className="text-3xl font-serif font-bold text-primary leading-none">
-                            {dayNum}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <h4 className="font-serif text-lg font-bold text-on-surface flex items-center gap-2">
-                            Mesa para {res.guests} comensales
+                      <div className="flex gap-4 sm:gap-6 items-center min-w-0">
+                        <DateChip iso={res.date} />
+                        <div className="space-y-1 min-w-0">
+                          <h4 className="font-serif text-xl font-semibold text-on-surface">
+                            Mesa para {res.guests} {res.guests === 1 ? 'persona' : 'personas'}
                           </h4>
-                          <p className="text-on-surface-variant text-xs md:text-sm font-sans">
-                            <span className="font-bold text-on-surface">{res.time} hs</span> · {res.zone}
+                          <p className="text-on-surface-variant text-sm">
+                            <span className="first-letter:uppercase inline-block">{formatLongDate(res.date)}</span> ·{' '}
+                            <span className="font-semibold text-on-surface">{res.time} hs</span> · {res.zone}
                           </p>
                           {res.specialRequests && (
-                            <p className="text-on-surface-variant/80 text-[11px] font-serif italic max-w-sm">
-                              Req: "{res.specialRequests}"
-                            </p>
+                            <p className="text-on-surface-variant text-sm italic break-words">“{res.specialRequests}”</p>
                           )}
                         </div>
                       </div>
 
-                      {/* Right: Status, QR View button, and Cancel button */}
-                      <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t border-outline-variant/15 md:border-0 pt-4 md:pt-0">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-emerald-500/10 text-emerald-400 text-[10px] md:text-xs uppercase font-bold tracking-widest px-3 py-1 rounded border border-emerald-500/20">
-                            Confirmada
-                          </span>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:justify-end border-t border-outline-variant/40 md:border-0 pt-3 md:pt-0">
+                        <span className="bg-emerald-500/10 text-emerald-300 text-xs uppercase font-bold tracking-widest px-3 py-1.5 rounded-sm border border-emerald-500/30 mr-auto md:mr-2">
+                          Confirmada
+                        </span>
 
-                        <div className="flex gap-4 items-center">
-                          {/* QR Code Action */}
-                          <button
-                            onClick={() => setActiveQrRes(res)}
-                            className="text-primary hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer bg-[#ffffff]/5 hover:bg-[#ffffff]/10 py-1.5 px-3 rounded"
-                          >
-                            <QrCode size={14} /> Ver QR
-                          </button>
-
-                          {/* Cancel Action */}
-                          <button
-                            onClick={() => {
-                              if (confirm('¿Está seguro de que desea cancelar su reserva premium?')) {
+                        {confirmingId === res.id ? (
+                          <div className="flex items-center gap-2" role="group" aria-label="Confirmar cancelación">
+                            <span className="text-sm text-on-surface">¿Cancelar?</span>
+                            <button
+                              onClick={() => {
+                                setConfirmingId(null);
                                 onCancelReservation(res.id);
-                              }
-                            }}
-                            className="text-on-surface-variant hover:text-rose-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer py-1.5"
-                          >
-                            <Trash2 size={14} /> Cancelar
-                          </button>
-                        </div>
+                              }}
+                              className="min-h-11 px-4 bg-rose-500/15 text-rose-200 border border-rose-400/50 hover:bg-rose-500/25 text-xs font-bold uppercase tracking-wider rounded-sm"
+                            >
+                              Sí, cancelar
+                            </button>
+                            <button
+                              onClick={() => setConfirmingId(null)}
+                              className="min-h-11 px-4 text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-wider rounded-sm"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setActiveQrRes(res)}
+                              className="min-h-11 px-4 text-primary hover:bg-primary/10 border border-primary/40 text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 rounded-sm"
+                            >
+                              <QrCode size={16} aria-hidden="true" /> Ver QR
+                            </button>
+                            <button
+                              onClick={() => setConfirmingId(res.id)}
+                              className="min-h-11 px-3 text-on-surface-variant hover:text-rose-300 text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 rounded-sm"
+                            >
+                              <Trash2 size={16} aria-hidden="true" /> Cancelar
+                            </button>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
             )}
           </div>
 
-          {/* Past/Cancelled Reservations */}
           {pastReservations.length > 0 && (
-            <div className="space-y-4 pt-4">
-              <h3 className="text-xs uppercase font-sans tracking-widest text-on-surface-variant font-bold">
-                Historial de Reservas
-              </h3>
-              
-              <div className="space-y-3 opacity-80">
-                {pastReservations.map((res) => {
-                  const d = new Date(res.date);
-                  const isInvalid = isNaN(d.getTime());
-                  const dayNum = isInvalid ? res.date.split('-')[2] || '28' : d.getDate();
-                  const monthName = isInvalid ? 'ABRIL' : d.toLocaleDateString('es-ES', { month: 'long' }).toUpperCase();
+            <div className="space-y-4">
+              <h3 className="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Historial</h3>
 
-                  return (
-                    <div
-                      key={res.id}
-                      className="flex flex-col md:flex-row justify-between p-5 bg-surface border border-outline-variant/10 rounded-sm gap-4 items-start md:items-center"
-                    >
-                      <div className="flex gap-5 items-center">
-                        <div className="text-center min-w-[64px] bg-surface-container p-2 rounded">
-                          <p className="text-[9px] uppercase text-on-surface-variant tracking-wider">
-                            {monthName.substring(0, 4)}
-                          </p>
-                          <p className="text-2xl font-serif font-bold text-on-surface-variant leading-none">
-                            {dayNum}
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-serif text-base font-bold text-on-surface-variant">
-                            Mesa para {res.guests} personas
-                          </h4>
-                          <p className="text-on-surface-variant text-xs">
-                            {res.time} hs · {res.zone}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                        {res.status === 'cancelada' ? (
-                          <span className="text-rose-400/70 text-[10px] uppercase font-bold tracking-widest bg-rose-500/5 px-2.5 py-1 border border-rose-500/10">
-                            Cancelada
-                          </span>
-                        ) : (
-                          <span className="text-on-surface-variant/70 text-[10px] uppercase font-bold tracking-widest bg-surface-container py-1 px-2.5 rounded">
-                            Finalizada
-                          </span>
-                        )}
-
-                        <button
-                          onClick={() => onRepeatReservation(res)}
-                          className="text-primary hover:underline hover:text-primary-container font-sans text-xs uppercase font-bold tracking-widest flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <RefreshCcw size={12} /> Repetir Reserva
-                        </button>
+              <ul className="space-y-3">
+                {pastReservations.map((res) => (
+                  <li
+                    key={res.id}
+                    className="flex flex-col md:flex-row justify-between p-4 sm:p-5 bg-surface border border-outline-variant/40 rounded-sm gap-4 md:items-center"
+                  >
+                    <div className="flex gap-4 sm:gap-5 items-center">
+                      <DateChip iso={res.date} muted />
+                      <div>
+                        <h4 className="font-serif text-lg font-semibold text-on-surface">
+                          Mesa para {res.guests} {res.guests === 1 ? 'persona' : 'personas'}
+                        </h4>
+                        <p className="text-on-surface-variant text-sm">
+                          {res.time} hs · {res.zone}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div className="flex items-center gap-3 justify-between md:justify-end">
+                      {res.status === 'cancelada' ? (
+                        <span className="text-rose-300 text-xs uppercase font-bold tracking-widest bg-rose-500/10 px-3 py-1.5 border border-rose-400/30 rounded-sm">
+                          Cancelada
+                        </span>
+                      ) : (
+                        <span className="text-on-surface-variant text-xs uppercase font-bold tracking-widest bg-surface-container py-1.5 px-3 border border-outline-variant/50 rounded-sm">
+                          Finalizada
+                        </span>
+                      )}
+
+                      <button
+                        onClick={() => onRepeatReservation(res)}
+                        className="min-h-11 px-3 text-primary hover:text-primary-container text-xs uppercase font-bold tracking-widest inline-flex items-center gap-1.5 rounded-sm whitespace-nowrap"
+                      >
+                        <RefreshCcw size={14} aria-hidden="true" /> Repetir reserva
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
-      </div>
+      </Reveal>
 
-      {/* QR Code detail Modal */}
-      {activeQrRes && (
-        <div className="fixed inset-0 bg-[#000000]/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
-          <div className="bg-surface-container border border-outline-variant/30 px-6 py-8 rounded-lg max-w-sm w-full text-center space-y-6 relative">
-            <button
-              onClick={() => setActiveQrRes(null)}
-              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary transition-colors font-bold cursor-pointer"
+      <AnimatePresence>
+        {activeQrRes && (
+          <motion.div
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => e.target === e.currentTarget && setActiveQrRes(null)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="qr-title"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="bg-surface-container border border-outline-variant px-6 py-8 rounded-md max-w-sm w-full text-center space-y-5 relative"
             >
-              ✕
-            </button>
+              <button
+                onClick={() => setActiveQrRes(null)}
+                aria-label="Cerrar"
+                className="absolute top-2 right-2 w-11 h-11 inline-flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+              >
+                <X size={20} />
+              </button>
 
-            <div className="border-b border-outline-variant/20 pb-2">
-              <h4 className="font-serif text-xl italic text-primary">Acceso Inteligente</h4>
-              <p className="text-xs text-on-surface-variant">Código de Check-in MESA</p>
-            </div>
+              <div className="border-b border-outline-variant/50 pb-3">
+                <h4 id="qr-title" className="font-serif text-2xl italic font-semibold text-primary">Tu acceso a MESA</h4>
+                <p className="text-sm text-on-surface-variant">Código de check-in</p>
+              </div>
 
-            {/* Simulated nice luxury QR and details */}
-            <div className="bg-white p-4 rounded-sm inline-block mx-auto shadow-2xl relative">
-              {/* Fake aesthetic QR drawing using vectors to guarantee precision */}
-              <div className="w-44 h-44 bg-neutral-900 flex flex-col justify-between p-3 rounded text-white font-mono text-[9px] relative overflow-hidden">
-                <div className="flex justify-between">
-                  <div className="w-10 h-10 border-2 border-white bg-white/10 rounded-sm"></div>
-                  <div className="w-10 h-10 border-2 border-white bg-white/10 rounded-sm"></div>
-                </div>
-                {/* Visual tech matrix mockup decoration */}
-                <div className="absolute inset-x-0 inset-y-12 flex flex-wrap gap-1 leading-none text-center select-none justify-center">
-                  <span className="text-primary font-bold">M E S A </span>
-                  <span className="text-[#cac6be]">G O U R M E T </span>
-                  <span className="text-primary font-bold">R E S E R V E </span>
-                </div>
-                <div className="flex justify-between items-end">
-                  <div className="w-10 h-10 border-2 border-white bg-white/10 rounded-sm"></div>
-                  <div className="w-8 h-8 flex items-center justify-center font-display italic text-[11px] text-primary">
-                    M
+              <div className="bg-white p-4 rounded-sm inline-block mx-auto shadow-2xl" aria-hidden="true">
+                <div className="w-44 h-44 bg-neutral-900 flex flex-col justify-between p-3 rounded-sm text-white font-mono text-[10px] relative overflow-hidden">
+                  <div className="flex justify-between">
+                    <div className="w-10 h-10 border-2 border-white bg-white/10 rounded-sm" />
+                    <div className="w-10 h-10 border-2 border-white bg-white/10 rounded-sm" />
+                  </div>
+                  <div className="absolute inset-x-0 inset-y-12 flex flex-wrap gap-1 leading-none justify-center select-none">
+                    <span className="text-primary font-bold">M E S A</span>
+                    <span className="text-neutral-300">P A L E R M O</span>
+                    <span className="text-primary font-bold">R E S E R V A</span>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div className="w-10 h-10 border-2 border-white bg-white/10 rounded-sm" />
+                    <div className="w-8 h-8 flex items-center justify-center font-display italic text-xs text-primary">M</div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-1 font-sans text-xs">
-              <p className="text-on-surface font-bold">Titular: {activeQrRes.name}</p>
-              <p className="text-on-surface-variant">
-                Mesa de {activeQrRes.guests} pers. · {activeQrRes.zone}
+              <div className="space-y-1 text-sm">
+                <p className="text-on-surface font-semibold">Titular: {activeQrRes.name}</p>
+                <p className="text-on-surface-variant">
+                  {activeQrRes.guests} {activeQrRes.guests === 1 ? 'persona' : 'personas'} · {activeQrRes.zone}
+                </p>
+                <p className="text-on-surface-variant first-letter:uppercase">
+                  {formatLongDate(activeQrRes.date)} · {activeQrRes.time} hs
+                </p>
+                <p className="text-primary font-semibold font-mono tracking-widest uppercase pt-2">
+                  MESA-{activeQrRes.id.replace('res-', '').slice(0, 6)}
+                </p>
+              </div>
+
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                Mostrá este código en la recepción y te acompañamos directo a tu mesa.
               </p>
-              <p className="text-primary font-semibold font-mono tracking-widest uppercase mt-2">
-                QR-TICKET: MESA-REF-{activeQrRes.id.substring(0, 6)}
-              </p>
-            </div>
 
-            <p className="text-[10px] text-on-surface-variant italic leading-relaxed">
-              Muestre este código al maitre en la recepción y será conducido directamente a su mesa asignada.
-            </p>
-
-            <button
-              onClick={() => setActiveQrRes(null)}
-              className="w-full bg-primary-container text-on-primary font-sans text-xs font-bold uppercase tracking-[0.1em] py-2.5 rounded-sm hover:bg-primary transition-all cursor-pointer"
-            >
-              Listo, cerrar
-            </button>
-          </div>
-        </div>
-      )}
+              <button
+                onClick={() => setActiveQrRes(null)}
+                className="w-full min-h-12 bg-primary text-on-primary text-xs font-bold uppercase tracking-[0.1em] rounded-sm hover:bg-primary-container transition-colors"
+              >
+                Listo
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

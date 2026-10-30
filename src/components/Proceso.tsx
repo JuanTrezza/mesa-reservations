@@ -1,65 +1,48 @@
-import React from 'react';
-import { Calendar, ShieldAlert, QrCode } from 'lucide-react';
+import { Calendar, ClipboardCheck, QrCode } from 'lucide-react';
+import SectionHeader from './SectionHeader';
+import Reveal from './Reveal';
+
+const steps = [
+  {
+    num: '01',
+    title: 'Elegí el momento',
+    desc: 'Seleccioná fecha, horario, cantidad de personas y el ambiente que más te guste.',
+    Icon: Calendar,
+  },
+  {
+    num: '02',
+    title: 'Confirmá tus datos',
+    desc: 'Dejanos tu nombre, email y celular, y contanos si tenés alguna alergia o pedido especial.',
+    Icon: ClipboardCheck,
+  },
+  {
+    num: '03',
+    title: 'Recibí tu QR',
+    desc: 'Te llega un código QR al instante. Lo mostrás en la entrada y te llevamos directo a tu mesa.',
+    Icon: QrCode,
+  },
+];
 
 export default function Proceso() {
-  const steps = [
-    {
-      num: '01',
-      title: 'Elegí el momento',
-      desc: 'Seleccione la fecha, hora y número de invitados según su preferencia gastronómica.',
-      icon: <Calendar className="w-5 h-5 text-primary" />
-    },
-    {
-      num: '02',
-      title: 'Confirmá detalles',
-      desc: 'Ingrese sus datos fundamentales de contacto y configure preferencias dietéticas especiales.',
-      icon: <ShieldAlert className="w-5 h-5 text-primary" />
-    },
-    {
-      num: '03',
-      title: 'Recibí confirmación',
-      desc: 'Recibirá un código QR único e inmediato en su móvil para validar su mesa sin esperas.',
-      icon: <QrCode className="w-5 h-5 text-primary" />
-    }
-  ];
-
   return (
-    <section className="py-20 bg-surface-container border-y border-outline-variant/15">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <h2 className="font-serif text-2xl md:text-4xl italic text-center text-on-surface mb-16">
-          Reservá en 3 simples pasos
-        </h2>
+    <section aria-labelledby="proceso-title" className="py-20 md:py-28 bg-surface-container-low border-t border-outline-variant/30">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12">
+        <SectionHeader id="proceso-title" eyebrow="Cómo funciona" title="Reservá en 3 simples pasos" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {steps.map((step, idx) => (
-            <div
-              key={step.num}
-              className="space-y-4 text-center group relative p-4 transition-all duration-300 rounded-sm"
-            >
-              {/* Central gold circle */}
-              <div className="relative inline-flex items-center justify-center w-16 h-16 border border-primary/30 rounded-full bg-surface-container-low text-primary font-display text-2xl font-semibold mb-2 group-hover:border-primary group-hover:scale-105 transition-all shadow-md">
-                {step.num}
-                {/* Micro logo icon */}
-                <div className="absolute -bottom-1 -right-1 bg-surface-container-high border border-outline-variant/20 p-1 rounded-full scale-90">
-                  {step.icon}
+        <ol className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 relative before:hidden md:before:block before:absolute before:top-8 before:left-[16.66%] before:right-[16.66%] before:border-t before:border-dashed before:border-primary/40">
+          {steps.map(({ num, title, desc, Icon }, idx) => (
+            <Reveal as="li" key={num} delay={idx * 0.12} className="text-center relative space-y-4">
+                <div className="relative inline-flex items-center justify-center w-16 h-16 border border-primary/60 rounded-full bg-surface-container text-primary font-display text-2xl font-semibold shadow-md">
+                  {num}
+                  <span className="absolute -bottom-1 -right-1 bg-surface-container-high border border-outline-variant p-1.5 rounded-full" aria-hidden="true">
+                    <Icon className="w-4 h-4 text-primary" />
+                  </span>
                 </div>
-              </div>
-
-              <h4 className="font-serif text-xl font-semibold text-on-surface">
-                {step.title}
-              </h4>
-              
-              <p className="text-on-surface-variant text-sm max-w-xs mx-auto leading-relaxed">
-                {step.desc}
-              </p>
-
-              {/* Connector lines (only for desktop view, hiding on mobile) */}
-              {idx < 2 && (
-                <div className="hidden md:block absolute top-[15%] left-[75%] w-[50%] h-[1px] border-t border-dashed border-outline-variant/30 z-0"></div>
-              )}
-            </div>
+                <h3 className="font-serif text-2xl font-semibold text-on-surface">{title}</h3>
+                <p className="text-on-surface-variant text-base max-w-xs mx-auto leading-relaxed">{desc}</p>
+            </Reveal>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   );
