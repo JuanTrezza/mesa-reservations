@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { FAQItem } from '../types';
 import SectionHeader from './SectionHeader';
@@ -22,7 +22,7 @@ const faqs: FAQItem[] = [
     id: 'faq-3',
     question: '¿Cómo reservo para un grupo grande?',
     answer:
-      'Para más de 8 personas te recomendamos el Salón Privado, con menú de pasos cerrado para que la cocina mantenga el ritmo y estén cómodos. Escribinos y armamos la propuesta.',
+      'Online podés reservar hasta 6 personas en el salón y la terraza, y hasta 4 en la barra. Para grupos de 6 a 12 está el Salón Privado, con menú de pasos cerrado: lo reservás desde la web y te lo confirmamos por teléfono dentro de las 24 horas.',
   },
   {
     id: 'faq-4',
@@ -85,7 +85,7 @@ export default function FAQ() {
                   </h3>
                   <AnimatePresence initial={false}>
                     {isOpen && (
-                      <motion.div
+                      <m.div
                         id={`${faq.id}-a`}
                         role="region"
                         aria-labelledby={`${faq.id}-q`}
@@ -96,7 +96,7 @@ export default function FAQ() {
                         className="overflow-hidden"
                       >
                         <p className="text-on-surface-variant text-base leading-relaxed pb-5 pr-8">{faq.answer}</p>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
                 </li>

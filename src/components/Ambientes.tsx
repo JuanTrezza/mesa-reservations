@@ -3,58 +3,66 @@ import { AmbientZone } from '../types';
 import SectionHeader from './SectionHeader';
 import Reveal from './Reveal';
 import interiorImg from '../assets/images/interior.webp';
+import interiorImgSm from '../assets/images/interior-768.webp';
 import terrazaImg from '../assets/images/terraza.webp';
+import terrazaImgSm from '../assets/images/terraza-768.webp';
 import barraImg from '../assets/images/barra.webp';
+import barraImgSm from '../assets/images/barra-768.webp';
 import salonImg from '../assets/images/salon-privado.webp';
+import salonImgSm from '../assets/images/salon-privado-768.webp';
 
 interface AmbientesProps {
   onSelectZone: (zone: string) => void;
 }
 
-const zones: (AmbientZone & { zone: string; width: number; height: number })[] = [
+type Zone = AmbientZone & { zone: string; imageSm: string; position: string };
+
+// Todas las fotos son 1536 × 1024 (variante de 768 px para mobile).
+// position: encuadre en las tarjetas verticales de mobile, donde se recortan los costados.
+const zones: Zone[] = [
   {
     id: 'interior',
     zone: 'Interior Principal',
     title: 'Interior Principal',
-    description: 'Techos altos con bóvedas, lámparas de bronce y mesas vestidas con mantelería de lino.',
+    description: 'Ventanales altos, arañas de cristal y mesas vestidas con mantelería blanca.',
     capacity: 'Hasta 60 personas · climatizado',
     image: interiorImg,
-    imageAlt: 'Salón principal con techos abovedados, ventanales altos y lámparas de bronce encendidas sobre mesas de madera',
-    width: 512,
-    height: 512,
+    imageSm: interiorImgSm,
+    position: 'object-[60%_40%]',
+    imageAlt: 'Salón principal con mesas de mantel blanco, sillones de cuero y grandes ventanales en arco iluminados de noche',
   },
   {
     id: 'terraza',
     zone: 'Terraza',
     title: 'Terraza',
-    description: 'Guirnaldas de luces, sillones bajos y vista a los techos de Palermo. Ideal para las noches de verano.',
+    description: 'Guirnaldas de luces, plantas y el atardecer sobre los edificios de Palermo.',
     capacity: 'Al aire libre · con calefactores',
     image: terrazaImg,
-    imageAlt: 'Terraza de noche con guirnaldas de luces cálidas, sillones de exterior y vista a la ciudad iluminada',
-    width: 512,
-    height: 288,
+    imageSm: terrazaImgSm,
+    position: 'object-[70%_45%]',
+    imageAlt: 'Terraza al atardecer con mesas iluminadas por velas, guirnaldas de luces y la silueta de la ciudad de fondo',
   },
   {
     id: 'barra',
     zone: 'Barra Premium',
     title: 'Barra Premium',
     description: 'Barra de mármol negro frente a la cocina abierta. Coctelería de autor y platos al paso.',
-    capacity: 'En primera fila · hasta 14 personas',
+    capacity: 'En primera fila · hasta 4 personas',
     image: barraImg,
-    imageAlt: 'Barra de mármol negro con estantes iluminados repletos de botellas de destilados',
-    width: 512,
-    height: 512,
+    imageSm: barraImgSm,
+    position: 'object-[55%_50%]',
+    imageAlt: 'Barra de mármol negro con banquetas de terciopelo verde, un cóctel servido y estantes de botellas iluminados',
   },
   {
     id: 'salon',
     zone: 'Salón Privado',
     title: 'Salón Privado',
-    description: 'Un espacio reservado para cenas de empresa, cumpleaños o celebraciones íntimas.',
-    capacity: 'Mesa imperial para 12 invitados',
+    description: 'Un espacio reservado junto a la cava para cenas de empresa, cumpleaños o celebraciones.',
+    capacity: 'Mesa imperial para 6 a 12 invitados',
     image: salonImg,
-    imageAlt: 'Salón privado con una mesa larga de madera, sillas tapizadas en terracota y una lámpara colgante dorada',
-    width: 512,
-    height: 512,
+    imageSm: salonImgSm,
+    position: 'object-[45%_40%]',
+    imageAlt: 'Salón privado de paredes verdes con una mesa larga iluminada por velas, una araña de cristal y la cava vidriada al fondo',
   },
 ];
 
@@ -72,17 +80,19 @@ export default function Ambientes({ onSelectZone }: AmbientesProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {zones.map((zone, i) => (
             <Reveal key={zone.id} delay={(i % 2) * 0.1}>
-              <article className="group relative aspect-[4/5] sm:aspect-[16/10] overflow-hidden rounded-md img-placeholder border border-outline-variant/50 shadow-xl">
+              <article className="group relative aspect-[4/5] sm:aspect-[3/2] overflow-hidden rounded-md img-placeholder border border-outline-variant/50 shadow-xl">
                 <img
                   src={zone.image}
+                  srcSet={`${zone.imageSm} 768w, ${zone.image} 1536w`}
+                  sizes="(min-width: 768px) 50vw, 100vw"
                   alt={zone.imageAlt}
-                  width={zone.width}
-                  height={zone.height}
+                  width={1536}
+                  height={1024}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+                  className={`absolute inset-0 w-full h-full object-cover ${zone.position} sm:object-center transition-transform duration-[1200ms] ease-out group-hover:scale-105`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/0" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/0" />
 
                 <div className="absolute inset-0 p-5 sm:p-6 md:p-8 flex flex-col justify-end">
                   <div className="space-y-2">

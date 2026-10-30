@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 
 interface RevealProps {
   children: ReactNode;
@@ -13,7 +13,7 @@ interface RevealProps {
  * Con prefers-reduced-motion, MotionConfig (en App) anula el desplazamiento y solo queda el fundido.
  */
 export default function Reveal({ children, className, delay = 0, as = 'div' }: RevealProps) {
-  const Component = motion[as] as typeof motion.div;
+  const Component = m[as] as typeof m.div;
   return (
     <Component
       className={className}

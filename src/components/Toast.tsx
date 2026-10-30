@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { CheckCircle2, Info, X } from 'lucide-react';
 
 export interface ToastData {
@@ -31,7 +31,7 @@ export default function Toast({ toast, onDismiss }: ToastProps) {
     >
       <AnimatePresence>
         {toast && (
-          <motion.div
+          <m.div
             key={toast.id}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -52,7 +52,7 @@ export default function Toast({ toast, onDismiss }: ToastProps) {
             >
               <X size={18} />
             </button>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

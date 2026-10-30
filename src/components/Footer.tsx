@@ -46,6 +46,9 @@ export default function Footer({ onNotify }: FooterProps) {
           <a href="#FAQ" className="min-h-11 px-2 inline-flex items-center hover:text-primary transition-colors">
             Preguntas frecuentes
           </a>
+          <a href="#/admin" className="min-h-11 px-2 inline-flex items-center text-on-surface-variant/90 hover:text-primary transition-colors">
+            Acceso restaurante
+          </a>
         </nav>
 
         <div className="flex gap-3">

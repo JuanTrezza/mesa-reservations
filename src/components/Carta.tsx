@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { MenuItem } from '../types';
 import SectionHeader from './SectionHeader';
 import { formatARS } from '../lib/booking';
@@ -119,7 +119,7 @@ export default function Carta() {
                 }`}
               >
                 {cat.label}
-                {selected && <motion.span layoutId="carta-tab" className="absolute -bottom-px left-0 right-0 h-0.5 bg-primary" />}
+                {selected && <m.span layoutId="carta-tab" className="absolute -bottom-px left-0 right-0 h-0.5 bg-primary" />}
               </button>
             );
           })}
@@ -127,7 +127,7 @@ export default function Carta() {
 
         <div id="carta-panel" role="tabpanel" aria-labelledby={`tab-${activeCategory}`}>
           <AnimatePresence mode="wait">
-            <motion.ul
+            <m.ul
               key={activeCategory}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -147,7 +147,7 @@ export default function Carta() {
                   <p className="text-on-surface-variant text-base leading-relaxed">{item.description}</p>
                 </li>
               ))}
-            </motion.ul>
+            </m.ul>
           </AnimatePresence>
         </div>
 

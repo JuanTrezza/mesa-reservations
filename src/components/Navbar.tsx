@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import { scrollToId } from '../lib/booking';
 
@@ -8,10 +8,10 @@ interface NavbarProps {
 }
 
 const LINKS = [
-  { id: 'inicio', label: 'Inicio' },
+  { id: 'reservas', label: 'Disponibilidad' },
+  { id: 'plano', label: 'Plano' },
   { id: 'zonas', label: 'Ambientes' },
   { id: 'carta', label: 'Carta' },
-  { id: 'reservas', label: 'Disponibilidad' },
   { id: 'reservas-dashboard', label: 'Mis reservas' },
   { id: 'contacto', label: 'Contacto' },
 ];
@@ -19,7 +19,7 @@ const LINKS = [
 export default function Navbar({ onOpenQuickBook }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeId, setActiveId] = useState('inicio');
+  const [activeId, setActiveId] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -123,7 +123,7 @@ export default function Navbar({ onOpenQuickBook }: NavbarProps) {
 
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div
+          <m.div
             id="mobile-menu"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -160,7 +160,7 @@ export default function Navbar({ onOpenQuickBook }: NavbarProps) {
                 </button>
               </li>
             </ul>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>
