@@ -206,7 +206,7 @@ export default function FloorPlan({ booking, reservations, onSelectTable, onCont
                 <g aria-hidden="true">
                   <rect x={40} y={460} width={420} height={20} rx={4} fill="#2A241C" stroke={C.line} />
                   <text x={250} y={474} textAnchor="middle" fontSize={10} fill={C.muted} fontFamily="Inter, sans-serif" letterSpacing="3">MOSTRADOR</text>
-                  <text x={764} y={354} textAnchor="end" fontSize={10} fill={C.muted} fontFamily="Inter, sans-serif" letterSpacing="2">JUNTO A LA CAVA</text>
+                  <text x={640} y={490} textAnchor="middle" fontSize={10} fill={C.muted} fontFamily="Inter, sans-serif" letterSpacing="2">JUNTO A LA CAVA</text>
                 </g>
 
                 {states.map(({ tb, state }) => (
